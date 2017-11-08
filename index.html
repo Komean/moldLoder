@@ -4,11 +4,165 @@
     <title>three.js webgl - trackball controls</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
-    
+    <style>
+        body {
+            color: #000;
+            font-family:Monospace;
+            font-size:13px;
+            text-align:center;
+            font-weight: bold;
+            background-color: #fff;
+            margin: 0px;
+            overflow: hidden;
+        }
+        #info {
+            color:#000;
+            position: absolute;
+            top: 0px; width: 100%;
+            padding: 5px;
+        }
+        a {
+            color: red;
+        }
+    </style>
 </head>
 
 <body>
+<div id="container"></div>
 
-是打发撒地方水电费水电费水电费水电费水电费
+<script src="build/three.js"></script>
+<script src="js/loader/OBJLoader.js"></script>
+<script src="js/loader/MTLLoader.js"></script>
+<script src="js/controls/TrackballControls.js"></script>
+<script src="js/Detector.js"></script>
+<script src="js/libs/stats.min.js"></script>
+
+<script>
+    //探测webGL的支持情况
+    if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
+    var container, stats;
+    var camera, controls, scene, renderer;
+    var cross;
+    init();
+  //  window.resizeBy(1,1);
+
+   // animate();
+
+    function draw()
+    {
+        renderer.render(scene, camera);
+    }
+
+    function init() {
+       camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 5000 );
+      //  camera = new THREE.OrthographicCamera(-5, 5, 3.75, -3.75, 0.1, 100);
+        camera.position.x = 100;
+        camera.position.y = 200;
+        camera.position.z = 100;
+
+        camera.up.x = 0;//设置相机的上为「x」轴方向
+        camera.up.y = 1;//设置相机的上为「y」轴方向
+        camera.up.z = 0;//设置相机的上为「z」轴方向
+        camera.lookAt( {x:0, y:0, z:0 } );//设置视野的中心坐标
+       // camera.position.set(5, 5, 20);
+        //camera.lookAt(new THREE.Vector3(0, 0, 0));
+        controls = new THREE.TrackballControls( camera );
+        controls.rotateSpeed = 5;
+        //controls.zoomSpeed = 1.2;
+        controls.panSpeed = 1.5;
+        controls.noZoom = false;
+        controls.noPan = false;
+        controls.staticMoving = true;
+      //  controls.dynamicDampingFactor = 0.3;
+       // controls.keys = [ 65, 83, 68 ];
+        controls.addEventListener( 'change', render );
+        // world
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color( 0xcccccc );
+
+        //加载模型
+        var mtlLoader = new THREE.MTLLoader();
+        mtlLoader.setBaseUrl('model/house/');
+        mtlLoader.setPath('model/house/');
+        mtlLoader.load('3Dchangjing.mtl', function (materials) {
+            materials.preload();
+            var loader = new THREE.OBJLoader();
+            loader.setPath('model/house/');
+            loader.setMaterials(materials);
+            loader.load('3Dchangjing.obj', function (object) {
+                object.traverse(function (child) {
+                    if (child instanceof THREE.Mesh) {
+                        child.material.side = THREE.DoubleSide;
+                       /* child.material.emissive.r=0;//设置rgb通道R通道颜色
+                        child.material.emissive.g=0.01;//设置rgb通道G通道颜色
+                        child.material.emissive.b=0.05;//设置rgb通道B通道颜色*/
+                        child.material.transparent=true;//材质允许透明
+                       // child.material.shading=THREE.SmoothShading;//平滑渲染
+                    }
+                });
+                // object.position.y = -95;
+                object.emissive=0x00ffff;//自发光颜色
+                object.ambient=0x00ffff;//环境光颜色
+                object.scale.x = 1;
+                object.scale.y = 1;
+                object.scale.z = 1;
+                scene.add(object);
+            });
+        });
+        // lights
+        var directionalLight = new THREE.DirectionalLight( 0xffffff );
+        directionalLight.position.set( -5, 5, 5).normalize();
+        scene.add( directionalLight );
+        var pointlight = new THREE.PointLight(0x63d5ff, 1, 200);
+        pointlight.position.set(0, 0, 200);
+        scene.add( pointlight );
+        var pointlight2 = new THREE.PointLight(0xffffff, 1, 200);
+        pointlight2.position.set(-200, 200, 200);
+        scene.add( pointlight2 );
+        var pointlight3 = new THREE.PointLight(0xffffff, 1.5, 200);
+        pointlight3.position.set(-200, 200, 0);
+        scene.add( pointlight3 );
+     //   scene.add( new THREE.PointLightHelper( pointlight3 ) );
+     //   scene.add( new THREE.PointLightHelper( pointlight2 ) );
+       // scene.add( new THREE.PointLightHelper( pointlight ) );
+
+        var light = new THREE.AmbientLight(0xffffff );
+        scene.add( light );
+        // renderer
+        renderer = new THREE.WebGLRenderer( { antialias: false } );
+        renderer.setPixelRatio( window.devicePixelRatio );
+        renderer.setSize( window.innerWidth, window.innerHeight );
+        container = document.getElementById( 'container' );
+        container.appendChild( renderer.domElement );
+       // stats = new Stats();
+        //container.appendChild( stats.dom );
+        //
+        window.addEventListener( 'resize', onWindowResize, false );
+        //
+        controls.update();
+        id = setTimeout(draw,20000);
+        animate();
+       // render();
+    }
+    function onWindowResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize( window.innerWidth, window.innerHeight );
+        controls.handleResize();
+        animate();
+       // render();
+    }
+    function animate() {
+        requestAnimationFrame( animate );
+        renderer.render( scene, camera );
+        controls.update();
+    }
+    function render() {
+        renderer.render( scene, camera );
+      //  stats.update();
+    }
+
+</script>
+
 </body>
 </html>
